@@ -23,14 +23,16 @@ class MainWindow(QMainWindow):
     self.setCentralWidget(MainWidgetContainer)
 
     # configure application window
-    self.setFixedSize(160, 180)
+    self.windowWidth = 250
+    self.windowHeight = 250
+    self.setFixedSize(self.windowWidth, self.windowHeight)
     self.setAttribute(Qt.WA_TranslucentBackground)
     self.setWindowFlags(Qt.FramelessWindowHint | Qt.Tool)
 
     # gauge refresh rate (queues self.paintEvent every 500ms)
     refreshTimer = QTimer(self)
     refreshTimer.timeout.connect(self.update)
-    refreshTimer.start(1000)
+    refreshTimer.start(500)
 
     # identify gpu sensor
     self.gpuSensor = self.getGpuSensor()
@@ -74,18 +76,26 @@ class MainWindow(QMainWindow):
     self.show()
 
 
-  # draw gauge, update temp display, and set window position
+  # update gauge, temp display, alarm indicator, colors, and window position
   def paintEvent(self, event):
 
-    # set display temperature
+    # set temperature display
     gpuTemp = self.getGpuTemp()
     self.tempDisplay.setText(str(gpuTemp))
 
-    # update window position and colors from user config
+    # set window position and colors from user config
     self.getUserConfig()
     self.setWindowPos()
     self.tempDisplay.setStyleSheet(StyleSheet.css("temp", self.gaugeColorStr))
     self.gpuLabel.setStyleSheet(StyleSheet.css("gpu", self.gaugeColorStr))
+
+    # paint alarm indicator
+    if(gpuTemp >= self.alarmTemp):
+      alarmPainter = QPainter(self)
+      alarmPainter.setRenderHint(QPainter.Antialiasing)
+      alarmPainter.setPen(QPen(self.alarmColor, 2, cap=Qt.FlatCap))
+      alarmPainter.drawEllipse(QPointF(self.windowWidth/2-1,self.windowHeight/2-6),100,100)
+      alarmPainter.end()
 
     # gauge painter canvas size
     canvasHeight = 150
@@ -110,9 +120,8 @@ class MainWindow(QMainWindow):
     gaugeValuePainter = QPainter(self)
     gaugeValuePainter.setRenderHint(QPainter.Antialiasing)
     gaugeValuePainter.setPen(QPen(self.gaugeColor, gaugeWidth, cap=Qt.SquareCap))
-
     # drawArc( canvas_origin_x, canvas_origin_y, canvas_width, canvas_height, start_angle, span_angle )
-    gaugeValuePainter.drawArc( gaugeWidth/2, gaugeWidth/2,
+    gaugeValuePainter.drawArc( 47,40,
                                canvasHeight + gaugeWidth, canvasWidth + gaugeWidth,
                                int((gaugeSize + (180 - gaugeSize) / 2)*16), int(-gaugeValue*16) )
     gaugeValuePainter.end()
@@ -121,11 +130,12 @@ class MainWindow(QMainWindow):
     gaugeOutlinePainter = QPainter(self)
     gaugeOutlinePainter.setRenderHint(QPainter.Antialiasing)
     gaugeOutlinePainter.setPen(QPen(self.gaugeColor, gaugeOutlineWidth, cap=Qt.FlatCap))
-
-    gaugeOutlinePainter.drawArc( gaugeWidth/2, gaugeWidth/2,
+    gaugeOutlinePainter.drawArc( 47,40,
                                  canvasHeight + gaugeWidth, canvasWidth + gaugeWidth,
                                  int((gaugeSize + (180 - gaugeSize) / 2)*16), int(-270*16) )
     gaugeOutlinePainter.end()
+
+
 
 
   def getGpuTemp(self):
@@ -153,7 +163,10 @@ class MainWindow(QMainWindow):
     rgba = list( map(int, configFile.readline().split(',')) )
     self.gaugeColor = QColor(rgba[0], rgba[1], rgba[2], rgba[3])
     self.gaugeColorStr = "rgba({0},{1},{2},{3})".format(rgba[0], rgba[1], rgba[2], rgba[3])
-    self.alarmTemp = configFile.readline()
+    self.alarmTemp = int(configFile.readline())
+    rgba = list( map(int, configFile.readline().split(',')) )
+    self.alarmColor = QColor(rgba[0], rgba[1], rgba[2], rgba[3])
+
 
   def setWindowPos(self):
     self.move(self.windowPos[0], self.windowPos[1])
