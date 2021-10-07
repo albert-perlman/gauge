@@ -12,9 +12,6 @@ import clr
 from PyStyle import *
 
 class MainWindow(QMainWindow):
-  resized = pyqtSignal()
-  focusIn = pyqtSignal()
-  focusOut = pyqtSignal()
 
   def __init__(self, *args, **kwargs):
     super(MainWindow, self).__init__(*args, **kwargs)
@@ -33,7 +30,10 @@ class MainWindow(QMainWindow):
     # gauge refresh rate (queues self.paintEvent every 500ms)
     refreshTimer = QTimer(self)
     refreshTimer.timeout.connect(self.update)
-    refreshTimer.start(500)
+    refreshTimer.start(1000)
+
+    # identify gpu sensor
+    self.gpuSensor = self.getGpuSensor()
 
     #############
     #  WIDGETS  #
@@ -49,9 +49,9 @@ class MainWindow(QMainWindow):
     self.tempDisplay.setStyleSheet(StyleSheet.css("temp"))
 
     # GPU label
-    gpuLabel = QLabel("GPU")
-    gpuLabel.setAlignment(Qt.AlignCenter)
-    gpuLabel.setStyleSheet(StyleSheet.css("gpu"))
+    self.gpuLabel = QLabel("GPU")
+    self.gpuLabel.setAlignment(Qt.AlignCenter)
+    self.gpuLabel.setStyleSheet(StyleSheet.css("gpu"))
 
     #############
     #  LAYOUTS  #
@@ -61,7 +61,7 @@ class MainWindow(QMainWindow):
     MainVLayout.addWidget(spacerTop)
     MainVLayout.addWidget(self.tempDisplay)
     MainVLayout.addWidget(spacerBottom)
-    MainVLayout.addWidget(gpuLabel)
+    MainVLayout.addWidget(self.gpuLabel)
     MainWidgetContainer.setLayout(MainVLayout)
 
     ####################
@@ -74,28 +74,18 @@ class MainWindow(QMainWindow):
     self.show()
 
 
-# -- methods
-
-  def getGpuTemp(self):
-    clr.AddReference(r"D:\util\OpenHardwareMonitor\OpenHardwareMonitorLib.dll")
-    from OpenHardwareMonitor.Hardware import Computer
-    c = Computer()
-    c.CPUEnabled = True # get the Info about CPU
-    c.GPUEnabled = True # get the Info about GPU
-    c.Open()
-    for a in range(0, len(c.Hardware[1].Sensors)):
-      # print(c.Hardware[1].Sensors[a].Identifier)
-      if "/nvidiagpu/0/temperature/0" in str(c.Hardware[1].Sensors[a].Identifier):
-        c.Hardware[1].Update()
-        return int(c.Hardware[1].Sensors[a].get_Value())
-
-
   # draw gauge, update temp display, and set window position
   def paintEvent(self, event):
 
     # set display temperature
     gpuTemp = self.getGpuTemp()
     self.tempDisplay.setText(str(gpuTemp))
+
+    # update window position and colors from user config
+    self.getUserConfig()
+    self.setWindowPos()
+    self.tempDisplay.setStyleSheet(StyleSheet.css("temp", self.gaugeColorStr))
+    self.gpuLabel.setStyleSheet(StyleSheet.css("gpu", self.gaugeColorStr))
 
     # gauge painter canvas size
     canvasHeight = 150
@@ -104,7 +94,7 @@ class MainWindow(QMainWindow):
     # gauge arc range: [0-270] degrees
     gaugeSize = 270
     gaugeWidth = 5
-    gaugeOutlineWidth = 0.2
+    gaugeOutlineWidth = 0.3
 
     # temp range: [20 - 100] C
     minTemp = 20
@@ -119,7 +109,7 @@ class MainWindow(QMainWindow):
     # paint gauge value
     gaugeValuePainter = QPainter(self)
     gaugeValuePainter.setRenderHint(QPainter.Antialiasing)
-    gaugeValuePainter.setPen(QPen(Qt.white, gaugeWidth, cap=Qt.SquareCap))
+    gaugeValuePainter.setPen(QPen(self.gaugeColor, gaugeWidth, cap=Qt.SquareCap))
 
     # drawArc( canvas_origin_x, canvas_origin_y, canvas_width, canvas_height, start_angle, span_angle )
     gaugeValuePainter.drawArc( gaugeWidth/2, gaugeWidth/2,
@@ -130,29 +120,43 @@ class MainWindow(QMainWindow):
     # paint gauge outline
     gaugeOutlinePainter = QPainter(self)
     gaugeOutlinePainter.setRenderHint(QPainter.Antialiasing)
-    gaugeOutlinePainter.setPen(QPen(Qt.white, gaugeOutlineWidth, cap=Qt.FlatCap))
+    gaugeOutlinePainter.setPen(QPen(self.gaugeColor, gaugeOutlineWidth, cap=Qt.FlatCap))
 
     gaugeOutlinePainter.drawArc( gaugeWidth/2, gaugeWidth/2,
                                  canvasHeight + gaugeWidth, canvasWidth + gaugeWidth,
                                  int((gaugeSize + (180 - gaugeSize) / 2)*16), int(-270*16) )
     gaugeOutlinePainter.end()
 
-    self.setWindowPos()
 
+  def getGpuTemp(self):
+    self.computer.Hardware[1].Update()
+    return int(self.gpuSensor.get_Value())
+
+
+  # identify OpenHardwareMonitor gpu temperature sensor
+  def getGpuSensor(self):
+    clr.AddReference(self.appctxt.get_resource("OpenHardwareMonitorLib.dll"))
+    from OpenHardwareMonitor.Hardware import Computer
+    self.computer = Computer()
+    self.computer.CPUEnabled = True # get the Info about CPU
+    self.computer.GPUEnabled = True # get the Info about GPU
+    self.computer.Open()
+    for i in range(0, len(self.computer.Hardware[1].Sensors)):
+      if "/nvidiagpu/0/temperature/0" in str(self.computer.Hardware[1].Sensors[i].Identifier):
+        return self.computer.Hardware[1].Sensors[i]
+
+
+  # read gauge.config
+  def getUserConfig(self):
+    configFile = open(self.appctxt.get_resource('gauge.config'), 'r')
+    self.windowPos = list( map(int, configFile.readline().split(',')) )
+    rgba = list( map(int, configFile.readline().split(',')) )
+    self.gaugeColor = QColor(rgba[0], rgba[1], rgba[2], rgba[3])
+    self.gaugeColorStr = "rgba({0},{1},{2},{3})".format(rgba[0], rgba[1], rgba[2], rgba[3])
+    self.alarmTemp = configFile.readline()
 
   def setWindowPos(self):
-    configFile = open(self.appctxt.get_resource('gauge.config'), 'r')
-    windowPos = list(map(int, configFile.readline().split(',')))
-    self.move(windowPos[0],windowPos[1])
-
-
-  # critical dialog pop-up
-  def dialogCritical(self, s):
-    dlg = QMessageBox(self)
-    dlg.setText(s)
-    dlg.setIcon(QMessageBox.Critical)
-    dlg.show()
-
+    self.move(self.windowPos[0], self.windowPos[1])
 
   # map key press events to gallery navigation
   def keyPressEvent(self, event):
@@ -188,7 +192,6 @@ class MainWindow(QMainWindow):
         pass
     except:
       pass
-
 
 
 if __name__ == '__main__':
