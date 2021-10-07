@@ -44,7 +44,7 @@ class MainWindow(QMainWindow):
     spacerBottom.setFixedSize(0,2.5)
 
     # temp display
-    self.tempDisplay = QLabel(str(self.getGpuTemp()))
+    self.tempDisplay = QLabel(str(self.getHardwareTemps()[1]))
     self.tempDisplay.setAlignment(Qt.AlignCenter)
     self.tempDisplay.setStyleSheet(StyleSheet.css("temp"))
 
@@ -76,25 +76,53 @@ class MainWindow(QMainWindow):
 
 # -- methods
 
-  def getGpuTemp(self):
+  def getHardwareTemps(self):
+    clr.AddReference(r"C:\Users\alber\Downloads\CPUThermometer\CPUThermometerLib.dll")
+    from CPUThermometer import Hardware
+    handle = Hardware.Computer()
+    handle.CPUEnabled = True
+    handle.Open()
+    for i in handle.Hardware:
+      i.Update()
+      for sensor in i.Sensors:
+        print(type(sensor).__module__)
+        if type(sensor).__module__ == 'CPUThermometer.Hardware':
+          pass
+
     clr.AddReference(r"D:\util\OpenHardwareMonitor\OpenHardwareMonitorLib.dll")
     from OpenHardwareMonitor.Hardware import Computer
     c = Computer()
-    c.CPUEnabled = True # get the Info about CPU
-    c.GPUEnabled = True # get the Info about GPU
+    c.CPUEnabled = True
+    c.GPUEnabled = True
     c.Open()
-    for a in range(0, len(c.Hardware[1].Sensors)):
-      # print(c.Hardware[1].Sensors[a].Identifier)
-      if "/nvidiagpu/0/temperature/0" in str(c.Hardware[1].Sensors[a].Identifier):
+
+    import wmi
+    w = wmi.WMI()
+    print( w.Win32_TemperatureProbe()[0].CurrentReading)
+
+    for i in range(0, len(c.Hardware[0].Sensors)):
+      # print(c.Hardware[0].Sensors[i].Identifier)
+      # print(c.Hardware[0].Sensors[i].SensorType)
+      if "/nvidiagpu/0/temperature/0" in str(c.Hardware[0].Sensors[i].Identifier):
+        c.Hardware[0].Update()
+        cpuTemp =  int(c.Hardware[0].Sensors[i].get_Value())
+
+    for i in range(0, len(c.Hardware[1].Sensors)):
+      print(c.Hardware[1].Sensors[i].Identifier)
+      if "/nvidiagpu/0/temperature/0" in str(c.Hardware[1].Sensors[i].Identifier):
         c.Hardware[1].Update()
-        return int(c.Hardware[1].Sensors[a].get_Value())
+        gpuTemp =  int(c.Hardware[1].Sensors[i].get_Value())
+
+    cpuTemp = 0
+    return [cpuTemp, gpuTemp]
 
 
   # draw gauge, update temp display, and set window position
   def paintEvent(self, event):
 
     # set display temperature
-    gpuTemp = self.getGpuTemp()
+    hardwareTemps = self.getHardwareTemps()
+    gpuTemp = hardwareTemps[1]
     self.tempDisplay.setText(str(gpuTemp))
 
     # gauge painter canvas size
