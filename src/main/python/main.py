@@ -8,6 +8,7 @@ from PyQt5.QtMultimedia  import *
 
 import sys
 import clr
+import time
 
 from PyStyle import *
 
@@ -32,7 +33,7 @@ class MainWindow(QMainWindow):
     # gauge refresh rate (queues self.paintEvent every 500ms)
     refreshTimer = QTimer(self)
     refreshTimer.timeout.connect(self.update)
-    refreshTimer.start(500)
+    refreshTimer.start(1000)
 
     # identify gpu sensor
     self.gpuSensor = self.getGpuSensor()
@@ -78,6 +79,7 @@ class MainWindow(QMainWindow):
 
   # update gauge, temp display, alarm indicator, colors, and window position
   def paintEvent(self, event):
+    time.sleep(1)
 
     # set temperature display
     gpuTemp = self.getGpuTemp()
@@ -134,7 +136,6 @@ class MainWindow(QMainWindow):
                                  canvasHeight + gaugeWidth, canvasWidth + gaugeWidth,
                                  int((gaugeSize + (180 - gaugeSize) / 2)*16), int(-270*16) )
     gaugeOutlinePainter.end()
-
 
 
 
