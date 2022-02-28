@@ -1,0 +1,20 @@
+﻿<UserControl x:Class="Gauge.UserControlGauge"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:Gauge" d:DataContext="{d:DesignInstance Type=local:GaugeViewModel}"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800">
+    <Grid>
+        <Border HorizontalAlignment="Center" VerticalAlignment="Center" Height="300" Width="300"
+                BorderBrush="Azure" BorderThickness="1 1 1 0" CornerRadius="150" Visibility="Visible">
+            <Path Stroke="Green" Data="M90,275 A150,150 0 1 1 210,275" FlowDirection="LeftToRight" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+        </Border>
+        <TextBlock HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="50"
+                   FontSize="50" FontFamily="Agency FB" Text="GPU" Foreground="Azure"/>
+        <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Margin="50"
+                   FontSize="50" FontFamily="Agency FB" Text="{Binding Path=Temp}" Foreground="Azure"/>
+    </Grid>
+</UserControl>

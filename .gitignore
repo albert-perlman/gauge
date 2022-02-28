@@ -1,4 +1,9 @@
-target/*
+# C#
+*.suo
+bin/
+obj/
+TestStore/
+# Python
 __pycache__/
-
+target/*
 !target/*.exe
