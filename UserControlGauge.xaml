@@ -5,16 +5,22 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:Gauge" d:DataContext="{d:DesignInstance Type=local:GaugeViewModel}"
              mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800">
+             d:DesignHeight="400" d:DesignWidth="400">
     <Grid>
-        <Border HorizontalAlignment="Center" VerticalAlignment="Center" Height="300" Width="300"
-                BorderBrush="Azure" BorderThickness="1 1 1 0" CornerRadius="150" Visibility="Visible">
-            <Path Stroke="Green" Data="M90,275 A150,150 0 1 1 210,275" FlowDirection="LeftToRight" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-
-        </Border>
+        <Path Stroke="Azure" Data="M90,275 A150,150 0 1 1 210,275" FlowDirection="LeftToRight"
+                  HorizontalAlignment="Center" VerticalAlignment="Center" StrokeThickness="1"/>
+        <!--<Path Stroke="Azure" StrokeThickness="2" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <Path.Data>
+                <PathGeometry>
+                    <PathFigure StartPoint="90,275">
+                        <ArcSegment Size="150,150" Point="210,20" SweepDirection="Clockwise" IsLargeArc="True" IsStroked="True"/>
+                    </PathFigure>
+                </PathGeometry>
+            </Path.Data>
+        </Path>-->
         <TextBlock HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="50"
                    FontSize="50" FontFamily="Agency FB" Text="GPU" Foreground="Azure"/>
         <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Margin="50"
-                   FontSize="50" FontFamily="Agency FB" Text="{Binding Path=Temp}" Foreground="Azure"/>
+                   FontSize="75" FontFamily="Agency FB" Text="{Binding Path=Temp}" Foreground="Azure"/>
     </Grid>
 </UserControl>

@@ -7,18 +7,12 @@
     </ApplicationDefinition>
   </ItemGroup>
   <ItemGroup>
-    <Compile Update="UserControlArc.xaml.cs">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Update="UserControlGauge.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
   <ItemGroup>
     <Page Update="MainWindow.xaml">
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Update="UserControlArc.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Update="UserControlGauge.xaml">

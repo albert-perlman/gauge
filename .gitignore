@@ -2,7 +2,7 @@
 *.suo
 bin/
 obj/
-TestStore/
+.vs/
 # Python
 __pycache__/
 target/*

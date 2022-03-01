@@ -7,8 +7,10 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800"
         AllowsTransparency="True" WindowStyle="None" Background="Transparent">
-    <Grid>
+    <!--<Grid>
         <local:UserControlGauge/>
+    </Grid>-->
+    <Canvas x:Name="canBackArea">
 
-    </Grid>
+    </Canvas>
 </Window>
